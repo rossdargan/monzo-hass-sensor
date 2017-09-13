@@ -14,7 +14,9 @@ sensor:
    
 To get a client ID, and secret go to https://developers.monzo.com/apps/home and click "+ New OAuth Client". Ensure you have set the confidentiality to "Confidential", and set the redirect url to http://ip-of-hass:8123/api/monzo
     
-NOTE: You may need to pip install monzo==0.5.3... haven't quite figured that bit out.
+NOTE: If you get the error "Error loading custom_components.sensor.monzo. Make sure all dependencies are installed" you will need to install a library I use into the config/deps folder using the following command:
+
+`sudo pip install monzo==0.5.3 --target ~/.homeassistant/deps`
 
 If you want to use the sensor with multiple accounts ensure you have added all the users to the "collaborators" in the OAuth client registration with monzo, and configure a differant location for the cache_path in hass.
 
