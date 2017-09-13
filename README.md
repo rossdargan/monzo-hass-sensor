@@ -1,7 +1,7 @@
 # monzo-hass-sensor
 A monzo sensor for home assistant. Currently this can be used to show your current balance as a sensor.
 
-To install this componenet into HASS copy the monzo.py file into a folder called custom_components in your config directory, then add the following config:
+To install this componenet into HASS copy the monzo.py file into a folder called /custom_components/sensor/ in your config directory, then add the following config:
 
 ```
 sensor:
