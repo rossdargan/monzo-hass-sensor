@@ -2,7 +2,6 @@ from homeassistant.const import TEMP_CELSIUS
 from homeassistant.helpers.entity import Entity
 from homeassistant.core import callback
 from homeassistant.components.http import HomeAssistantView
-from monzo.monzo import Monzo
 from requests import post
 from homeassistant.const import (
     CONF_NAME)
@@ -220,7 +219,8 @@ class MonzoAuthCallbackView(HomeAssistantView):
 
 class MonzoSensor(Entity):
     """Representation of a Sensor."""
-
+    from monzo.monzo import Monzo
+    
     def __init__(self, oauth, name):
         self._name = name
         self._oauth = oauth
