@@ -29,6 +29,7 @@ DOMAIN = 'monzo'
 CONF_CLIENT_ID = 'client_id'
 CONF_CLIENT_SECRET = 'client_secret'
 CONF_CACHE_PATH = 'cache_path'
+CONF_CURRENT_ACCOUNT = 'current_account'
 
 CONFIGURATOR_LINK_NAME = 'Link Monzo account'
 CONFIGURATOR_SUBMIT_CAPTION = 'I authorized successfully'
@@ -57,6 +58,7 @@ def setup_platform(hass, config, add_devices, device_discovery=None):
     client_secret = config.get(CONF_CLIENT_SECRET)
     callback_url = '{}{}'.format(hass.config.api.base_url, AUTH_CALLBACK_PATH)
     cache = config.get(CONF_CACHE_PATH, hass.config.path(DEFAULT_CACHE_PATH))
+    current_account = config.get(CONF_CURRENT_ACCOUNT, False)
     oauth = oAuthClient(client_id, client_secret, callback_url, cache_path=cache)
 
     token_info = oauth.get_cached_token()
@@ -68,11 +70,11 @@ def setup_platform(hass, config, add_devices, device_discovery=None):
     if hass.data.get(DOMAIN):
         configurator = hass.components.configurator
         configurator.request_done(hass.data.get(DOMAIN))
-        del hass.data[DOMAIN]   
-    sensor = MonzoSensor(oauth, config.get(CONF_NAME, DEFAULT_NAME))
+        del hass.data[DOMAIN]
+    sensor = MonzoSensor(oauth, current_account, config.get(CONF_NAME, DEFAULT_NAME))
     add_devices([sensor])
 
-class oAuthClient():  
+class oAuthClient():
     REQUEST_TOKEN_URL = 'https://auth.getmondo.co.uk'
     ACCESS_TOKEN_URL = 'https://api.monzo.com/oauth2/token'
 
@@ -85,7 +87,7 @@ class oAuthClient():
         self.redirect_uri = redirect_uri
         self.state = state
         if state is None:
-            self.state = self._generate_nonce(8)            
+            self.state = self._generate_nonce(8)
         self.cache_path = cache_path
         self.token_info = None
 
@@ -101,7 +103,7 @@ class oAuthClient():
         if state is not None:
             payload['state'] = state
 
-        urlparams = urllib.parse.urlencode(payload)        
+        urlparams = urllib.parse.urlencode(payload)
         return "%s?%s" % (self.REQUEST_TOKEN_URL, urlparams)
 
     def get_cached_token(self):
@@ -132,7 +134,7 @@ class oAuthClient():
                    'client_id': self.client_id}
 
         response = post(self.ACCESS_TOKEN_URL, data=payload)
-        if response.status_code != 200:           
+        if response.status_code != 200:
             _LOGGER.warn("couldn't refresh token: code:%d reason:%s" \
                 % (response.status_code, response.reason))
             return None
@@ -150,12 +152,12 @@ class oAuthClient():
             _LOGGER.error("The state does not match what we sent... possible CQRS issue")
             return
 
-        post_url_params = { 'grant_type':'authorization_code', 
-                            'client_id': self.client_id, 
-                            'client_secret': self.client_secret, 
-                            'redirect_uri':self.redirect_uri, 
-                            'code': code }              
-        
+        post_url_params = { 'grant_type':'authorization_code',
+                            'client_id': self.client_id,
+                            'client_secret': self.client_secret,
+                            'redirect_uri':self.redirect_uri,
+                            'code': code }
+
         response = post(self.ACCESS_TOKEN_URL, data=post_url_params)
 
         if response.status_code is not 200:
@@ -189,6 +191,8 @@ class oAuthClient():
         """Generate pseudorandom number."""
         return ''.join([str(random.randint(0, 9)) for i in range(length)])
 
+class MonzoAccountError(Exception):
+    pass
 
 class MonzoOauthError(Exception):
     pass
@@ -207,21 +211,22 @@ class MonzoAuthCallbackView(HomeAssistantView):
 
     @callback
     def get(self, request):
-        """Receive authorization token."""        
+        """Receive authorization token."""
         hass = request.app['hass']
 
-        state = request.query['state'] 
+        state = request.query['state']
         code = request.query['code']
         self.oauth.get_access_token(state, code)
-        
+
         hass.async_add_job(setup_platform, hass, self.config, self.add_devices)
 
 class MonzoSensor(Entity):
     """Representation of a Sensor."""
-   
-    def __init__(self, oauth, name):
+
+    def __init__(self, oauth, current_account, name):
         self._name = name
         self._oauth = oauth
+        self._current_account = current_account
         self._token_info = self._oauth.get_cached_token()
         self._currency = None
         self._client = None
@@ -230,7 +235,7 @@ class MonzoSensor(Entity):
 
     def refresh_monzo_instance(self):
         import monzo.monzo  # Import Monzo Class
-        """Fetch a new monzo instance."""        
+        """Fetch a new monzo instance."""
         token_refreshed = False
         need_token = (self._token_info is None or
                       self._oauth.is_token_expired(self._token_info))
@@ -247,7 +252,15 @@ class MonzoSensor(Entity):
         if self._client is None or token_refreshed:
             self._client = \
                 monzo.monzo.Monzo(self._token_info.get('access_token'))
-            self._account_id = self._client.get_first_account()['id']
+            account = None
+            if self._current_account:
+                accounts = self._client.get_accounts()['accounts']
+                account = next(acc for acc in accounts if acc['type'] == 'uk_retail')
+            else:
+                account = self._client.get_first_account()
+            if not account:
+                raise MonzoAccountError('Account could not be found')
+            self._account_id = account['id']
 
     @property
     def name(self):
@@ -280,7 +293,7 @@ class MonzoSensor(Entity):
             _LOGGER.warning("Monzo failed to update, token expired.")
             return
 
-        balance = self._client.get_balance(self._account_id) # Get your balance object        
+        balance = self._client.get_balance(self._account_id) # Get your balance object
         self._state = balance['balance']/100
         currency = balance['currency']
         if currency == 'GBP':
