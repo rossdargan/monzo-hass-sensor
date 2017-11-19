@@ -10,8 +10,11 @@ sensor:
     client_secret: '***SECRET***'
     name: 'Optional name for the sensor'
     cache_path: '/.homeassistant/.optional-cache-location-for-token'
+    current_account: true # only if you the current account
 ```
-   
+
+Set current_account true only if you have the Monzo current account.
+
 To get a client ID, and secret go to https://developers.monzo.com/apps/home and click "+ New OAuth Client". Ensure you have set the confidentiality to "Confidential", and set the redirect url to http://ip-of-hass:8123/api/monzo
 
 If you want to use the sensor with multiple accounts ensure you have added all the users to the "collaborators" in the OAuth client registration with monzo, and configure a differant location for the cache_path in hass.
