@@ -231,6 +231,7 @@ class MonzoSensor(Entity):
         self._client = None
         self._state = None
         self._account_id = None
+        self._spend_today = None
 
     def refresh_monzo_instance(self):
         import monzo.monzo  # Import Monzo Class
@@ -281,6 +282,19 @@ class MonzoSensor(Entity):
         """Return the icon to use in the frontend, if any."""
         return ICON
 
+    @property
+    def spend_today(self):
+        """Return the Amount spent today.
+        """
+        return self._spend_today
+
+    @property
+    def device_state_attributes(self):
+        """Return device specific state attributes."""
+        attrs = {}
+        attrs['spend_today'] = self._spend_today
+        return attrs
+
     def update(self):
         """Fetch new state data for the sensor.
 
@@ -294,6 +308,7 @@ class MonzoSensor(Entity):
 
         balance = self._client.get_balance(self._account_id) # Get your balance object
         self._state = balance['balance']/100
+        self._spend_today = balance['spend_today']/100 # Get amount spent today
         currency = balance['currency']
         if currency == 'GBP':
             currency = '£'

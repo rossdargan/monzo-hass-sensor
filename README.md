@@ -22,7 +22,7 @@ To get a client ID, and secret go to https://developers.monzo.com/apps/home and 
 If you want to use the sensor with multiple accounts ensure you have added all the users to the "collaborators" in the OAuth client registration with monzo, and configure a differant location for the cache_path in hass.
 
 ## Known Issues:
-If you have issues logging into monzo as part of the linking to open hab check the redirect part of the query string (in the address bar) matches the oAuth client you setup on monzo. Often this just looks like the "submit" button isn't working.
+If you have issues logging into monzo as part of the linking to Home Assistant check the redirect part of the query string (in the address bar) matches the oAuth client you setup on Monzo. Often this just looks like the "submit" button isn't working.
 
 After logging in to Monzo by clicking on the email your browser will download a 0 byte file called "monzo". You do not need this and it's safe to delete it.
 
