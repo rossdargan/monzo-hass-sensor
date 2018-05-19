@@ -74,7 +74,7 @@ def setup_platform(hass, config, add_devices, device_discovery=None):
     add_devices([sensor])
 
 class oAuthClient():
-    REQUEST_TOKEN_URL = 'https://auth.getmondo.co.uk'
+    REQUEST_TOKEN_URL = 'https://auth.monzo.com'
     ACCESS_TOKEN_URL = 'https://api.monzo.com/oauth2/token'
 
     def __init__(self, client_id, client_secret, redirect_uri, state=None, cache_path=None):
