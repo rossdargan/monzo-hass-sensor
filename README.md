@@ -3,7 +3,7 @@ A monzo sensor for Home Assistant. Currently this can be used to show your curre
 
 ## Installation
 
-To install this component into HASS copy the monzo.py file into a folder called /custom_components/sensor/ in your config directory (typically ~/.homeassistant), then add the following config:
+To install this component into HASS copy the monzo.py file into a folder called /custom_components/monzo/ in your config directory (typically ~/.homeassistant), then add the following config:
 
 ```
 sensor:
